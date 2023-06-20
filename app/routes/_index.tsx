@@ -1,5 +1,6 @@
 import type { V2_MetaFunction } from "@remix-run/node";
 import { LoaderFunction, redirect } from "@remix-run/node";
+import { requireUserUuid } from "~/utils/auth.server";
 
 export const meta: V2_MetaFunction = () => {
   return [
@@ -9,5 +10,6 @@ export const meta: V2_MetaFunction = () => {
 };
 
 export const loader: LoaderFunction = async ({request}) => {
-  return redirect("/login");
+  await requireUserUuid(request);
+  return redirect("/home");
 };

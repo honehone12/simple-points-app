@@ -79,17 +79,27 @@ export async function createUserSession(uuid: string, redirectTo: string) {
     });
 }
 
-export async function requireUserUuid(
-    request: Request,
-    redirectTo: string = new URL(request.url).pathname
-) {
-    const session = await getUserSession(request);
-    const uuid = session.get("uuid");
-    if (!uuid || typeof uuid !== "string") {
-        const searchParams = new URLSearchParams([["redirectTo", redirectTo]]);
-        throw redirect(`/login?${searchParams}`);
+export async function requireUserUuid(request: Request) {
+    const uuid = await getUserUuid(request);
+    if (!uuid) {
+        throw redirect("/login");
     }
-    return uuid;
+
+    let user;
+    try {
+        user = await db.user.findUnique({
+            where: {uuid: uuid},
+            select: {id: true, uuid: true, name: true, email: true}
+        });
+    } catch (e) {
+        console.error(e);
+        throw await logout(request);
+    }
+
+    if (!user) {
+        throw logout(request);
+    }
+    return user;
 }
 
 function getUserSession(request: Request) {
@@ -107,7 +117,7 @@ async function getUserUuid(request: Request) {
 
 export async function getUser(request: Request) {
     const uuid = await getUserUuid(request);
-    if (typeof uuid !== "string") {
+    if (!uuid) {
         return null;
     }
 
@@ -119,7 +129,7 @@ export async function getUser(request: Request) {
         return user;
     } catch (e) {
         console.error(e);
-        throw logout(request);
+        throw await logout(request);
     }
 }
 

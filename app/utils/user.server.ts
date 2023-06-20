@@ -3,7 +3,7 @@ import type { RegisterForm } from "./types.server"
 import { db } from "./db.server"
 
 export const createUser = async (user: RegisterForm) => {
-    const passwordHash = await bcrypt.hash(user.password, 32);
+    const passwordHash = await bcrypt.hash(user.password, 14);
     const newUser = await db.user.create({
         data: {
             name: user.name,
@@ -23,6 +23,9 @@ export const getUserById = async (userId: number) => {
     return await db.user.findUnique({
         where: {
             id: userId
+        },
+        select: {
+            id: true, uuid: true, name: true, email: true
         }
     });
 }

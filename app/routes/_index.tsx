@@ -11,5 +11,5 @@ export const meta: V2_MetaFunction = () => {
 
 export const loader: LoaderFunction = async ({request}) => {
   await requireUserUuid(request);
-  return redirect("/home");
+  return redirect("/home/balance");
 };

@@ -1,20 +1,13 @@
-import { LoaderFunction } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { requireUserUuid } from "~/utils/auth.server";
-
-export const loader: LoaderFunction = async ({request}) => {
-    const user = await requireUserUuid(request);
-    return user;
-};
+import { Outlet } from "@remix-run/react";
+import { Layout } from "~/components/layout";
 
 export default function Home() {
-    const user = useLoaderData();
     return (
-        <div>
-            {user.id}<br/>
-            {user.name}<br/>
-            {user.email}<br/>
-            {user.uuid}
-        </div>
+        <Layout>
+            <h2 className="text-center py-10 text-8xl">
+            🤩
+            </h2>
+            <Outlet/>
+        </Layout>
     );
 }

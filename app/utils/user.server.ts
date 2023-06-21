@@ -31,7 +31,7 @@ export const getUserById = async (userId: number) => {
 }
 
 export const updateUserName = async (userId: number, newName: string) => {
-    await db.user.update({
+    return await db.user.update({
         where: {
             id: userId
         },

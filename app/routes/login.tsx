@@ -163,6 +163,7 @@ export default function Login() {
                     <FormField
                         htmlFor="email"
                         label="Email"
+                        type="email"
                         value={formData.email}
                         onChange={(e) => handleInput(e, "email")}
                         error={errors?.email}

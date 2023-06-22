@@ -47,7 +47,7 @@ export const consume = async (userId: number, value: number) => {
             throw new Error(`no such user with id ${userId}`);
         }
         const valueN = BigInt(value);
-        if (value > current.point) {
+        if (valueN > current.point) {
             throw new Error("underflow");
         }
 
@@ -59,3 +59,49 @@ export const consume = async (userId: number, value: number) => {
         });
     });
 };
+
+export const transfer = async (
+    fromId: number,
+    toId: number,
+    amount: number
+) => {
+    return await db.$transaction(async (tx) => {
+        const fromCurrent = await tx.balance.findUnique({
+            where: {userId: fromId},
+        });
+        if (!fromCurrent) {
+            throw new Error(`no such user with id ${fromId}`);
+        }
+
+        const toCurrent = await tx.balance.findUnique({
+            where: {userId: toId}
+        });
+        if (!toCurrent) {
+            throw new Error(`no such user with id ${toId}`);
+        }
+
+        const amountN = BigInt(amount);
+        if (amountN > fromCurrent.point) {
+            throw new Error("underflow");
+        }
+        if (amountN > maxInt64N - toCurrent.point) {
+            throw new Error("overflow");
+        }
+
+        const fromNew = await tx.balance.update({
+            where: {id: fromCurrent.id},
+            data: {
+                point: fromCurrent.point - amountN
+            }
+        });
+        
+        const toNew = await tx.balance.update({
+            where: {id: toCurrent.id},
+            data: {
+                point: toCurrent.point + amountN
+            }
+        });
+        
+        return {fromNew, toNew}
+    });
+}

@@ -38,8 +38,15 @@ export const action: ActionFunction = async ({request}) => {
         );
     }
     
-    // need error page !!
-    await fund(user.id, fundUnit);
+    try {
+        await fund(user.id, fundUnit);    
+    } catch (e) {
+        return json(
+            {error: e},
+            {status: StatusCode.BadRequest}
+        );
+    }
+    
     return redirect("/home/balance");
 };
 
@@ -57,7 +64,7 @@ export default function Fund() {
         <div>
             <div className="flex flex-col py-10 items-center justify-center">
                 <h2 className="text-center text-4xl pb-10 font-extrabold text-pink-200">
-                    Get Your Points 🎉
+                    Get Points 🎉
                 </h2>
                 <div className="rounded-2xl bg-gray-200 py-5 px-10 w-96">
                     <form method="post">
@@ -81,5 +88,5 @@ export default function Fund() {
                 </div>
             </div>
         </div>
-    )
+    );
 }

@@ -21,23 +21,27 @@ export const createUser = async (user: RegisterForm) => {
 
 export const getUserById = async (userId: number) => {
     return await db.user.findUnique({
-        where: {
-            id: userId
-        },
+        where: {id: userId},
         select: {
-            id: true, uuid: true, name: true, email: true
+            id: true, 
+            uuid: true, 
+            name: true, 
+            email: true
         }
+    });
+}
+
+export const getUserIdByEmail = async (email: string) => {
+    return await db.user.findUnique({
+        where: {email: email},
+        select: {id: true}
     });
 }
 
 export const updateUserName = async (userId: number, newName: string) => {
     return await db.user.update({
-        where: {
-            id: userId
-        },
-        data: {
-            name: newName
-        }
+        where: {id: userId},
+        data: {name: newName}
     });
 };
 

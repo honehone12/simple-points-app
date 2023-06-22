@@ -22,3 +22,11 @@ export const validatePointCode = (code: string): string | undefined => {
         return "Please enter a code"
     }
 };
+
+export const validateUnsignedNumber = (value: number): string | undefined => {
+    if (!Number.isInteger(value) ||
+        value < 0 || value > Number.MAX_SAFE_INTEGER
+    ) {
+        return "Please enter a number"
+    }
+}

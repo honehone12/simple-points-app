@@ -97,7 +97,7 @@ export async function requireUserUuid(request: Request) {
     }
 
     if (!user) {
-        throw logout(request);
+        throw await logout(request);
     }
     return user;
 }

@@ -12,6 +12,7 @@ import { fund } from "~/utils/balance.server";
 import { StatusCode } from "~/utils/status-code.server";
 import { validatePointCode } from "~/utils/validators.server";
 import { fundUnit } from "~/utils/constants.server";
+import { consumeCode, getCodeByUuid } from "~/utils/code.server";
 
 export const loader: LoaderFunction = async ({request}) => {
     const user = await requireUserUuid(request);
@@ -37,8 +38,18 @@ export const action: ActionFunction = async ({request}) => {
             {status: StatusCode.BadRequest}
         );
     }
+
+    const code = await getCodeByUuid(pointCode);
+    if (!code || code.consumed) {
+        return json(
+            {error: "invalid code"},
+            {status: StatusCode.BadRequest}
+        );
+    }
+
     
     try {
+        await consumeCode(code.id, user.id);
         await fund(user.id, fundUnit);    
     } catch (e) {
         return json(

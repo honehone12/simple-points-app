@@ -32,3 +32,14 @@ model Balance {
   userId Int @unique
   user User @relation(fields: [userId], references: [id])  
 }
+
+model Code {
+  id Int @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  uuid String @unique @default(uuid())
+
+  consumed Int @db.SmallInt
+  consumer Int 
+}

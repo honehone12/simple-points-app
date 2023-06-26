@@ -5,3 +5,6 @@ if (!fundUnitText) {
 export const fundUnit = parseInt(fundUnitText);
 
 export const maxInt64N = BigInt(Number.MAX_SAFE_INTEGER);
+
+export const passcodeBytesLen = 16;
+export const passcodeStrLen = passcodeBytesLen * 2; 

@@ -15,8 +15,8 @@ import { fundUnit } from "~/utils/constants.server";
 import { consumeCode, getCodeByUuid } from "~/utils/code.server";
 
 export const loader: LoaderFunction = async ({request}) => {
-    const user = await requireUserUuid(request);
-    return user;
+    await requireUserUuid(request);
+    return null;
 };
 
 export const action: ActionFunction = async ({request}) => {
@@ -47,7 +47,6 @@ export const action: ActionFunction = async ({request}) => {
         );
     }
 
-    
     try {
         await consumeCode(code.id, user.id);
         await fund(user.id, fundUnit);    

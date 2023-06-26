@@ -20,7 +20,8 @@ model User {
   email        String   @unique
   passwordHash String
 
-  balance Balance?
+  balance      Balance?
+  oneTimePass  OneTimePass?
 }
 
 model Balance {
@@ -28,18 +29,30 @@ model Balance {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  point BigInt
-  userId Int @unique
-  user User @relation(fields: [userId], references: [id])  
+  point        BigInt
+
+  userId       Int      @unique
+  user         User     @relation(fields: [userId], references: [id])  
 }
 
 model Code {
-  id Int @id @default(autoincrement())
+  id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  uuid String @unique @default(uuid())
+  uuid      String   @unique @default(uuid())
 
-  consumed Int @db.SmallInt
-  consumer Int 
+  consumed  Int      @db.SmallInt
+  consumer  Int 
+}
+
+model OneTimePass {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  pass      String?
+
+  userId    Int       @unique
+  user      User      @relation(fields: [userId], references: [id])
 }

@@ -10,9 +10,10 @@ export const createUser = async (user: RegisterForm) => {
             email: user.email,
             passwordHash: passwordHash,
             balance: {
-                create: {
-                    point: 0
-                }
+                create: {point: 0}
+            },
+            oneTimePass: {
+                create: {}
             }
         }
     });

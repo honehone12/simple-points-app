@@ -16,13 +16,15 @@ export const loader: LoaderFunction = async ({request}) => {
     // need serializing library for Bigint etc (see remix github issue)
     // but value of balance here is less than equal max64
     // and can safely cast to number
-    const balance = {
-        id: balanceN.id,
-        point: Number(balanceN.point),
-        userId: balanceN.userId
+    return {
+        user: {
+            name: user.name,
+            email: user.email
+        }, 
+        balance: {
+            point: Number(balanceN.point),
+        }
     };
-    
-    return {user, balance};
 };
 
 export default function Balance() {

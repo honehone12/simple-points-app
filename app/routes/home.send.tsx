@@ -1,17 +1,28 @@
-import { ActionFunction, LoaderFunction, json, redirect } from "@remix-run/node";
-import { useActionData } from "@remix-run/react";
+import { 
+    ActionFunction, 
+    LoaderFunction, 
+    json, 
+    redirect 
+} from "@remix-run/node";
+import { useActionData, useLoaderData } from "@remix-run/react";
 import React, { useState } from "react";
 import { FormField } from "~/components/form-field";
 import { requireUserUuid } from "~/utils/auth.server";
 import { transfer } from "~/utils/balance.server";
+import { createOneTimePass, getStoredOneTimePass, setOneTimePass } from "~/utils/oneTimePass.server";
 import { StatusCode } from "~/utils/status-code.server";
 import { getUserIdByEmail } from "~/utils/user.server";
-import { validateEmail, validateUnsignedNumber } from "~/utils/validators.server";
-
+import { 
+    validateEmail, 
+    validateOneTimePass, 
+    validateUnsignedNumber 
+} from "~/utils/validators.server";
 
 export const loader: LoaderFunction = async ({request}) => {
     const user = await requireUserUuid(request);
-    return user;
+    const oneTimePass = createOneTimePass();
+    await setOneTimePass(user.id, oneTimePass);
+    return {oneTimePass};
 };
 
 export const action: ActionFunction = async ({request}) => {
@@ -19,8 +30,12 @@ export const action: ActionFunction = async ({request}) => {
     const form = await request.formData();
     const to = form.get("to");
     const amountStr = form.get("amount");
-    
-    if (typeof to !== "string" || typeof amountStr !== "string") {
+    const oneTimePass = form.get("oneTimePass")
+
+    if (typeof to !== "string" || 
+        typeof amountStr !== "string" || typeof oneTimePass !== "string"
+    ) {
+        await setOneTimePass(fromUser.id);
         return json(
             {error: "invalid form data"},
             {status: StatusCode.BadRequest}
@@ -31,6 +46,7 @@ export const action: ActionFunction = async ({request}) => {
     try {
         amount = parseInt(amountStr);
     } catch (e) {
+        await setOneTimePass(fromUser.id);
         return json(
             {error: "invalid form data"},
             {status: StatusCode.BadRequest}
@@ -39,10 +55,29 @@ export const action: ActionFunction = async ({request}) => {
 
     let errors = {
         to: validateEmail(to),
-        amount: validateUnsignedNumber(amount)
+        amount: validateUnsignedNumber(amount),
+        oneTimePass: validateOneTimePass(oneTimePass)
     };
 
     if (Object.values(errors).some(Boolean)) {
+        await setOneTimePass(fromUser.id);
+        return json(
+            {
+                errors,
+                fields: {to, amount}
+            }, 
+            {status: StatusCode.BadRequest}
+        );
+    }
+
+    // Passcode should have expiration-time
+    // Updated-at is exported !!
+    const storedPass = await getStoredOneTimePass(fromUser.id);
+    if (!storedPass || !storedPass.pass || 
+        storedPass.pass !== oneTimePass
+    ) {
+        await setOneTimePass(fromUser.id);
+        errors.oneTimePass = "invalid passcode";
         return json(
             {
                 errors,
@@ -54,6 +89,7 @@ export const action: ActionFunction = async ({request}) => {
 
     const toUser = await getUserIdByEmail(to);
     if (!toUser) {
+        await setOneTimePass(fromUser.id);
         errors.to = `no such user email: ${to}`;
         return json(
             {
@@ -65,6 +101,7 @@ export const action: ActionFunction = async ({request}) => {
     }
 
     try {
+        await setOneTimePass(fromUser.id);
         await transfer(fromUser.id, toUser.id, amount);
     } catch (e) {
         return json(
@@ -77,10 +114,12 @@ export const action: ActionFunction = async ({request}) => {
 };
 
 export default function Send() {
+    const {oneTimePass} = useLoaderData();
     const actionData = useActionData();
     const [formData, setFormData] = useState({
         to: actionData?.fields?.to || "",
-        amount: actionData?.fields?.amount || ""
+        amount: actionData?.fields?.amount || "",
+        oneTimePass: ""
     });
     const errors = actionData?.errors;
     const formError = actionData?.error;
@@ -94,13 +133,19 @@ export default function Send() {
             [field]: e.target.value
         }));
     };
-    
+
     return (
         <div>
             <div className="flex flex-col py-10 items-center justify-center">
                 <h2 className="text-center text-4xl pb-10 font-extrabold text-pink-200">
                     Send Points 🫰
                 </h2>
+                <h4 className="text-center text-xl pb-2 font-extrabold text-pink-200">
+                    Please copy this one-time passcode.
+                </h4>
+                <div className="rounded-2xl bg-gray-200 py-5 px-10 w-fix mb-10 font-semibold text-blue-900">
+                    {oneTimePass as string}
+                </div>    
                 <div className="rounded-2xl bg-gray-200 py-5 px-10 w-96">
                     <form method="post">
                         <div className="text-xs font-semibold text-center tracking-wide text-red-500 w-full ">
@@ -121,6 +166,14 @@ export default function Send() {
                             value={formData.amount}
                             onChange={(e) => handleInput(e, "amount")}
                             error={errors?.amount}
+                        />
+                        <FormField
+                            htmlFor="oneTimePass"
+                            label="OneTimePasscode"
+                            type="text"
+                            value={formData.oneTimePass}
+                            onChange={(e) => handleInput(e, "oneTimePass")}
+                            error={errors?.oneTimePass}
                         />
 
                         <div className="w-full text-center">

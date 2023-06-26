@@ -1,3 +1,5 @@
+import { passcodeStrLen } from "./constants.server";
+
 export const validateEmail = (email: string): string | undefined => {
     var validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
     if (!email.length || !validRegex.test(email)) {
@@ -18,9 +20,9 @@ export const validateName = (name: string): string | undefined => {
 };
 
 export const validatePointCode = (code: string): string | undefined => {
-    if (code.length != 36 /*16bytes + four '-'s*/ || (
-        code[8] != "-" || code[13] != "-" ||  
-        code[18] != "-", code[23] != "-"
+    if (code.length !== 36 /*16bytes + four '-'s*/ || (
+        code[8] !== "-" || code[13] !== "-" ||  
+        code[18] !== "-", code[23] !== "-"
     )) {
         return "Please enter a code"
     } 
@@ -33,3 +35,9 @@ export const validateUnsignedNumber = (value: number): string | undefined => {
         return "Please enter a number"
     }
 }
+
+export const validateOneTimePass = (pass: string): string | undefined => {
+    if (pass.length !== passcodeStrLen) {
+        return "Please enter a passcode"
+    }
+};

@@ -21,6 +21,8 @@ const storage = createCookieSessionStorage({
         secrets: [sessionSecret],
         sameSite: "lax",
         path: "/",
+        // this expiration is only for browser
+        // should check some other updatedAt value in db 
         maxAge: 60 * 60,
         httpOnly: true
     }

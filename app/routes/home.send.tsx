@@ -9,7 +9,11 @@ import React, { useState } from "react";
 import { FormField } from "~/components/form-field";
 import { requireUserUuid } from "~/utils/auth.server";
 import { transfer } from "~/utils/balance.server";
-import { createOneTimePass, getStoredOneTimePass, setOneTimePass } from "~/utils/oneTimePass.server";
+import { 
+    createOneTimePass, 
+    getStoredOneTimePass, 
+    setOneTimePass 
+} from "~/utils/oneTimePass.server";
 import { StatusCode } from "~/utils/status-code.server";
 import { getUserIdByEmail } from "~/utils/user.server";
 import { 
@@ -70,11 +74,11 @@ export const action: ActionFunction = async ({request}) => {
         );
     }
 
-    // Passcode should have expiration-time
-    // Updated-at is exported !!
     const storedPass = await getStoredOneTimePass(fromUser.id);
+    const now = Date.now();
     if (!storedPass || !storedPass.pass || 
-        storedPass.pass !== oneTimePass
+        storedPass.pass !== oneTimePass ||
+        now > storedPass.updatedAt.getTime() + 1000 * 60 * 3 // 3min
     ) {
         await setOneTimePass(fromUser.id);
         errors.oneTimePass = "invalid passcode";
@@ -114,7 +118,7 @@ export const action: ActionFunction = async ({request}) => {
 };
 
 export default function Send() {
-    const {oneTimePass} = useLoaderData();
+    const {oneTimePass} = useLoaderData()
     const actionData = useActionData();
     const [formData, setFormData] = useState({
         to: actionData?.fields?.to || "",
@@ -123,6 +127,9 @@ export default function Send() {
     });
     const errors = actionData?.errors;
     const formError = actionData?.error;
+    const [copied, setCopied] = useState("Click to copy");
+
+    const oneTimePassStr = oneTimePass as string
 
     const handleInput = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -134,6 +141,11 @@ export default function Send() {
         }));
     };
 
+    const copyToClipboard = (s: string) => {
+        navigator.clipboard.writeText(s);
+        setCopied("Copied !!");
+    };
+
     return (
         <div>
             <div className="flex flex-col py-10 items-center justify-center">
@@ -143,9 +155,16 @@ export default function Send() {
                 <h4 className="text-center text-xl pb-2 font-extrabold text-pink-200">
                     Please copy this one-time passcode.
                 </h4>
-                <div className="rounded-2xl bg-gray-200 py-5 px-10 w-fix mb-10 font-semibold text-blue-900">
-                    {oneTimePass as string}
-                </div>    
+                <div
+                    onClick={() => copyToClipboard(oneTimePassStr)} 
+                    className="rounded-2xl bg-gray-200 py-5 px-10 w-fix  font-semibold text-blue-900"
+                >
+                    {oneTimePassStr}
+                </div>
+                <h4 className="text-center mb-10 pb-2 font-semibold text-pink-200">
+                    {/* don't want to change layout */}
+                    {copied}
+                </h4>
                 <div className="rounded-2xl bg-gray-200 py-5 px-10 w-96">
                     <form method="post">
                         <div className="text-xs font-semibold text-center tracking-wide text-red-500 w-full ">

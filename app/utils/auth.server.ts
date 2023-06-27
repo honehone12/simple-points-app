@@ -21,9 +21,8 @@ const storage = createCookieSessionStorage({
         secrets: [sessionSecret],
         sameSite: "lax",
         path: "/",
-        // this expiration is only for browser
-        // should check some other updatedAt value in db 
-        maxAge: 60 * 60,
+        // this expiration is only for browser 
+        maxAge: 60 * 60 * 24,
         httpOnly: true
     }
 });
@@ -73,10 +72,14 @@ export async function login({email, password}: LoginForm) {
 
 export async function createUserSession(uuid: string, redirectTo: string) {
     const session = await storage.getSession();
+    const now = Date.now();
     session.set("uuid", uuid);
+    session.set("expiration", now + 1000 * 60 * 30); // 0.5h
+    const header = await storage.commitSession(session);
+
     return redirect(redirectTo, {
         headers: {
-            "Set-Cookie": await storage.commitSession(session)
+            "Set-Cookie": header
         }
     });
 }
@@ -104,16 +107,18 @@ export async function requireUserUuid(request: Request) {
     return user;
 }
 
-function getUserSession(request: Request) {
-    return storage.getSession(request.headers.get("Cookie"));
-}
-
 async function getUserUuid(request: Request) {
-    const session = await getUserSession(request);
+    const session = await storage.getSession(request.headers.get("Cookie"));
     const uuid = session.get("uuid");
     if (!uuid || typeof uuid !== "string") {
         return null;
     }
+    const expiration = session.get("expiration");
+    const now = Date.now();
+    if (!expiration || now > expiration) {
+        return null;
+    }
+
     return uuid;
 }
 
@@ -136,10 +141,11 @@ export async function getUser(request: Request) {
 }
 
 export async function logout(request: Request) {
-    const session = await getUserSession(request);
+    const session = await storage.getSession(request.headers.get("Cookie"));
+    const header = await storage.destroySession(session);
     return redirect("/login", {
         headers: {
-            "Set-Cookie": await storage.destroySession(session)
+            "Set-Cookie": header
         }
     });
 }
